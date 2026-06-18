@@ -29,12 +29,12 @@
         
         let whiteBoardX = 600;
         let pipeSpacing = 350;
-        let pipeAx = whiteBoardX;
+        let pipeAx = whiteBoardX +5;
         let pipeBx = whiteBoardX + pipeSpacing;
-        let pipeAwidth = 25;
-        let pipeBwidth = 100; 
-        let holeAposY = 400;
-        let holeBposY = 100;
+        let pipeBwidth; 
+        let pipeAwidth;
+        let holeAposY;
+        let holeBposY;
         let holeSize = 150;
 
         let collisionA = false;
@@ -46,66 +46,111 @@
         let score = 0;
         let birds = 3;
         let xBirds = 0;
-        let gameOver = false;
         let validA = false;
         let validB = false;
+
+        let isPaused = false;
+        let isGameOver = false;
+        let iRunning = true;
+        let isReset = false;
+        let seconds = -1;
+        let isFirstGame = true;
 
         function start() {
             gameLoop();
         }
 
+        function newGame(isCounting) {
+            if (isFirstGame) {
+                isRunning = false;
+            }
+        }
+
         function reStart() {
-            gameOver = false;
-            xBirds = 0;
-            score = 0;
-            pipeSpeed = 3;
-            pipeAx = whiteBoardX;
+            boxBirdY = 160;
+            isGravity = true;
+            isRunning = true;
+            isPaused = false;
+            isReset = false;
+        }
+        
+        function reset() {
+            pipeAx = whiteBoardX +5;
             pipeBx = whiteBoardX + pipeSpacing;
+            pipeSpeed = 3;
             collisionA = false;
             collisionB = false;
             scorePipeA = false;
             scorePipeB = false;
-            boxBirdY = 160;
+            isGameOver = false;
+            isRunning = false;
+            isPaused = false;
+            isReset = true;
+            isFirstGame = false;
+            xBirds = 0;
+            score = 0;
         }
 
         function handleKeyDown(e) {
             if (e.code == "Space") {
-                if (!gameOver && pipeSpeed > 0) {
-                    vy = -4;
+                if (isRunning) {
+                    if (!isGameOver) {
+                        vy = -4;
+                    }
                 }
             }
             if(e.code == "KeyP") {
-                if (pipeSpeed > 0) {
-                    pipeSpeed = 0;
-                    isGravity = false;
-                } else if (pipeSpeed == 0) {
-                    pipeSpeed = 3;
-                    isGravity = true;
+                if (!isFirstGame) {
+                    if (isRunning) {
+                        if (!isGameOver) {
+                            if (!isPaused) {
+                                pipeSpeed = 0;
+                                isPaused = true;
+                                isGravity = false;
+                            } else if (isPaused) {
+                                pipeSpeed = 3;
+                                isPaused = false;
+                                isGravity = true;
+                            }
+                        }
+                    }
+                }
+                if (isFirstGame) {
+                    timer(4000);
+                    reset();
                 }
             }
-            if (e.code === "KeyR") {
-                reStart();
+            if (e.code == "KeyR") {
+                if (!isReset) {
+                    timer(4000)
+                    reset();
+                }
             }
-            if (e.code === "NumpadAdd") {
-                pipeSpeed += 0.25;
+            if (e.code == "NumpadAdd") {
+                if (isRunning) {
+                    pipeSpeed += 0.25;
+                }
             }
             if (e.code == "NumpadSubtract") {
-                if (pipeSpeed > 0.25) {
-                    pipeSpeed -= 0.25;
+                if (isRunning) {
+                    if (pipeSpeed > 0.25) {
+                        pipeSpeed -= 0.25;
+                    }
                 }
             }
             if (e.code == "ArrowUp") {
-                if (pipeSpeed == 0) {
-                    boxBirdY -= 10;
+                if (isPaused) {
+                    if (boxBirdY >= 0) {
+                        boxBirdY -= 10;
+                    }
                 }
             }
             if (e.code == "ArrowDown") {
-                if (pipeSpeed == 0) {
-                    boxBirdY += 10;
+                if (isPaused) {
+                    if (boxBirdY <= c.height -40) {
+                        boxBirdY += 10;
+                    }
                 }
-            }
-            if (e.code === "Numpad0") {
-                score = 0;
             }
         }
 
@@ -116,6 +161,17 @@
                 boxBirdY = c.height - 40;
                 vy = -vy * 0.65;
             }
+        }
+
+        function timer(duration) {
+            let endTime = Date.now() + duration;
+            let timer = setInterval(() => {
+                let timeLeft = endTime - Date.now();
+                seconds = Math.floor(timeLeft / 1000);
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                }
+            }, 100);
         }
                 
         function getRand(pipePosX,i,min,max) {
@@ -130,8 +186,12 @@
         }
         
         function boxBird(birdX, birdY, birdSizeX, birdSizeY, color) {
-            ctx.fillStyle = color;
-            ctx.fillRect(birdX, birdY, birdSizeX, birdSizeY);
+            if (!isFirstGame) {
+                if (!isReset) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(birdX, birdY, birdSizeX, birdSizeY);
+                }
+            }
         }
 
         function absolutePipePos(pipePosX,pipeWidth) {
@@ -153,12 +213,12 @@
             ctx.fillRect(pipePosX,bottomPipeY,width,bottomPipeL);
         }
 
-
         function detectCollision(birdX,birdY,pipeX,pipeWidth,holePos,isCollision) {
-            let smash = (birdX + 40 >= pipeX && birdX <= pipeX + pipeWidth);
-            if (smash && birdY <= holePos || smash && birdY +40 >= holePos+holeSize) {
-                isCollision = true;
-            }  else if (pipeX >= whiteBoardX) {
+            if (birdX + 40 >= pipeX && birdX <= pipeX + pipeWidth) {
+                if (birdY <= holePos || birdY +40 >= holePos+holeSize) {
+                    isCollision = true;
+                }
+            } else if (pipeX >= whiteBoardX) {
                 isCollision = false;
             }
             return(isCollision);
@@ -174,7 +234,7 @@
             return(isScore);
         }
         
-        function whiteBoard(color) {
+        function whiteBoard(isCounting) {
             ctx.fillStyle = "white"
             ctx.fillRect(whiteBoardX, -0.5, 301, c.height+1);
             ctx.lineWidth = 1;
@@ -189,11 +249,23 @@
             drawText(whiteBoardX + 15, c.height - 90, 13, "black","press <p> to pause");
             drawText(whiteBoardX + 15, c.height - 70, 13, "black","press <r> to reset");
             drawText(whiteBoardX + 15, c.height - 20, 20, "black", "Score:  " + score);
-            if(gameOver) {
+            if (isFirstGame) {
+                if (!isReset) {
+                    drawText(whiteBoardX -510, c.height -400, 50, "black", "Press <p> to start.");
+                }
+            }
+            if (isReset) {
+                if (isCounting >= 1) {
+                    drawText(whiteBoardX + 100, 300, 150, "black", isCounting);
+                }
+            }
+            if(isGameOver) {
                 drawText(whiteBoardX + 15, 300, 50, "black", "GameOver");
             }
+            if (isPaused) {
+                drawText(whiteBoardX + 50, 300, 75, "black", "pause");
+            }
             boxBirds();
-            
         }
         
         function boxBirds() {
@@ -215,15 +287,15 @@
         }
         
         function boxedBirds(isCollision,valid) {
-            if (!isCollision){
+            if (!isCollision) {
                 valid = true;
             } 
             if (isCollision && valid ) {
                 xBirds++;
                 valid = false;
             }
-            if(xBirds == birds){
-               gameOver = true;
+            if(xBirds == birds) {
+               isGameOver = true;
             }
             return valid;
         }
@@ -235,19 +307,21 @@
         }
 
         function update() {
-            pipeAx = absolutePipePos(pipeAx,pipeAwidth);
-            pipeBx = absolutePipePos(pipeBx,pipeBwidth);
-            pipeAwidth = getRand(pipeAx,pipeAwidth,20,100);
-            pipeBwidth = getRand(pipeBx,pipeBwidth,20,100);
-            holeAposY = getRand(pipeAx,holeAposY,50,400);
-            holeBposY = getRand(pipeBx,holeBposY,50,400);
-            collisionA = detectCollision(boxBirdX,boxBirdY,pipeAx,pipeAwidth,holeAposY,collisionA);
-            collisionB = detectCollision(boxBirdX,boxBirdY,pipeBx,pipeBwidth,holeBposY,collisionB);
-            scorePipeA = detectScore(pipeAx,pipeAwidth,collisionA,scorePipeA);
-            scorePipeB = detectScore(pipeBx,pipeBwidth,collisionB,scorePipeB);
-            if(xBirds < birds) {
-                validA = boxedBirds(collisionA,validA);
-                validB = boxedBirds(collisionB,validB);
+            if (isRunning) {
+                pipeAx = absolutePipePos(pipeAx,pipeAwidth);
+                pipeBx = absolutePipePos(pipeBx,pipeBwidth);
+                pipeAwidth = getRand(pipeAx,pipeAwidth,20,100);
+                pipeBwidth = getRand(pipeBx,pipeBwidth,20,100);
+                holeAposY = getRand(pipeAx,holeAposY,50,400);
+                holeBposY = getRand(pipeBx,holeBposY,50,400);
+                collisionA = detectCollision(boxBirdX,boxBirdY,pipeAx,pipeAwidth,holeAposY,collisionA);
+                collisionB = detectCollision(boxBirdX,boxBirdY,pipeBx,pipeBwidth,holeBposY,collisionB);
+                scorePipeA = detectScore(pipeAx,pipeAwidth,collisionA,scorePipeA);
+                scorePipeB = detectScore(pipeBx,pipeBwidth,collisionB,scorePipeB);
+                if(xBirds < birds) {
+                    validA = boxedBirds(collisionA,validA);
+                    validB = boxedBirds(collisionB,validB);
+                }
             }
         }
         
@@ -256,15 +330,22 @@
             boxBird(boxBirdX,boxBirdY, 40, 40, "black");
             pipePair(pipeAx,holeSize,holeAposY,pipeAwidth); // posX,holeSize,holePosY
             pipePair(pipeBx,holeSize,holeBposY,pipeBwidth); // posX,holeSize,holePosY
-            whiteBoard();
+            whiteBoard(seconds);
         }
 
         function gameLoop() {
+            newGame();
             if (isGravity) {
                 enableGravity();
             }
+            if (isReset) {
+                if (seconds == 0) {
+                    reStart();
+                }
+            }
             update();
             draw();
+            console.log(seconds)
             requestAnimationFrame(gameLoop);
         }
 
