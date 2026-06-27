@@ -28,13 +28,13 @@
 
         const gameStat = [
             {birds:3, xBirds:0, gameScore:0},
-            {level:1, flutterForce:-6, gravity:0.5, pipeSpeed:3, holeSize:200},
-            {level:2, flutterForce:-6, gravity:0.5, pipeSpeed:5, holeSize:175},
-            {level:3, flutterForce:-4.5, gravity:0.3, pipeSpeed:3, holeSize:100},
-            {isRunning:false, isPaused:false, isGameOver:false, isReset:false, isFirstGame:true}
+            {level:"Newbie", flutterForce:-6, gravity:0.5, pipeSpeed:3, holeSize:200, birds:4},
+            {level:"Stoic", flutterForce:-4.5, gravity:0.3, pipeSpeed:3, holeSize:100, birds:3},
+            {level:"Hardened", flutterForce:-8, gravity:0.5, pipeSpeed:8, holeSize:200, birds:2},
+            {isRunning:false, isPaused:false, isGameOver:false, isReset:false, isNewGame:true}
         ]
 
-        let level = gameStat[1];
+        let level = gameStat.at(1);
         
         let seconds;
         let vy = 0;
@@ -43,16 +43,18 @@
         let boxBirdX = 200;
         let boxBirdY = 160;
         let whiteBoardX = 600;
+        let startMenuX = 100;
+        let startMenuY = 100;
         
         function start() {
             gameLoop();
         }
         
         function reStart() {
-            if (!gameStat[4].isPaused && seconds == 0) {
+            if (!gameStat.at(4).isPaused && seconds == 0) {
                 seconds = -1;
                 boxBirdY = 160;
-                Object.assign(gameStat[4],{isRunning:true, isReset:false});
+                Object.assign(gameStat.at(4), {isRunning:true, isReset:false});
             }
         }
         
@@ -60,47 +62,63 @@
             pipes.forEach(item => {
                 if (item.pipe === "A"||"B"||"C") {
                     item.pipePos = -item.pipeW;
-                    if (!gameStat[4].isFirstGame) {
-                        item.isCollision = item.isScore = false;
-                    }
+                    item.isCollision = item.isScore = false;
                 }
             })
-            Object.assign(gameStat[0], {xBirds:0, gameScore:0})
-            Object.assign(gameStat[4], {isRunning:false, isPaused:false, isGameOver:false, isReset:true, isFirstGame:false})
+            gameStat.at(4).isNewGame = false;
         }
         
         function handleKeyDown(e) {
             if (e.code == "Space") {
-                if (gameStat[4].isRunning && !gameStat[4].isGameOver) {
+                if (!gameStat.at(4).isPaused && gameStat.at(4).isRunning) {
                     vy = level.flutterForce;
                 }
             }
             if(e.code == "KeyP") {
-                if (gameStat[4].isFirstGame) {
-                    timer(3000);
-                    reset();
-                } else if (gameStat[4].isRunning && !gameStat[4].isPaused && !gameStat[4].isGameOver && seconds == -1) {
-                    Object.assign(gameStat[4], {isPaused:true, isRunning:false})
-                } else if (gameStat[4].isPaused) {
-                    Object.assign(gameStat[4], {isPaused:false, isRunning:true})
+                if (!gameStat.at(4).isPaused && gameStat.at(4).isRunning && seconds == -1) {
+                    gameStat.at(4).isPaused = true;
+                } else if (gameStat.at(4).isPaused) {
+                    gameStat.at(4).isPaused = false;
                 }
             }
             if (e.code == "KeyR") {
-                if (!gameStat[4].isReset && !gameStat[4].isFirstGame) {
-                    timer(3000);
-                    reset();
+                if (!gameStat.at(4).isReset && !gameStat.at(4).isNewGame) {
+                    Object.assign(gameStat.at(4), {isRunning:false, isPaused:false, isNewGame:true, isGameOver:false})
+                    Object.assign(gameStat.at(0), {xBirds:0, gameScore:0})
+                }
+            }
+            if (e.code == "Digit1" || e.code == "Numpad1") {
+                if (gameStat.at(4).isNewGame) {
+                    menuHelper(1);
+                }
+            }
+            if (e.code == "Digit2" || e.code == "Numpad2") {
+                if (gameStat.at(4).isNewGame) {
+                    menuHelper(2);
+                }
+            }
+            if (e.code == "Digit3" || e.code == "Numpad3") {
+                if (gameStat.at(4).isNewGame) {
+                    menuHelper(3);
                 }
             }
             if (e.code == "ArrowUp") {
-                if (gameStat[4].isPaused && boxBirdY >= 0) {
+                if (gameStat.at(4).isPaused && boxBirdY >= 0) {
                     boxBirdY -= 10;
                 }
             }
             if (e.code == "ArrowDown") {
-                if (gameStat[4].isPaused && boxBirdY <= c.height -40) {
+                if (gameStat.at(4).isPaused && boxBirdY <= c.height -40) {
                     boxBirdY += 10;
                 }
             }
+        }
+        
+        function menuHelper(choice) {
+            level = gameStat.at(choice);
+            gameStat.at(4).isReset = true;
+            timer(3000);
+            reset();
         }
         
         function enableGravity() {
@@ -125,51 +143,51 @@
         }
         
         function pipeUpdater(iD) {
-            if (pipes[trailingPipe].pipePos + pipes[trailingPipe].pipeW + pipes[trailingPipe].spacing >= whiteBoardX) {
-                if (pipes[iD].pipePos <= -pipes[iD].pipeW) {
-                    pipes[iD].pipePos = -pipes[iD].pipeW;
+            if (pipes.at(trailingPipe).pipePos + pipes.at(trailingPipe).pipeW + pipes.at(trailingPipe).spacing >= whiteBoardX) {
+                if (pipes.at(iD).pipePos <= -pipes.at(iD).pipeW) {
+                    pipes.at(iD).pipePos = -pipes.at(iD).pipeW;
                 } else {
-                    pipes[iD].pipePos -= level.pipeSpeed;
+                    pipes.at(iD).pipePos -= level.pipeSpeed;
                 }
             } else {
-                pipes[iD].pipePos = whiteBoardX;
-                pipes[iD].holePos = Math.floor(Math.random() * (pipes[3].maxHolePos - pipes[3].minHolePos)) + pipes[3].minHolePos;
-                pipes[iD].pipeW = Math.floor(Math.random() * (pipes[3].maxWidth - pipes[3].minWidth)) + pipes[3].minWidth;
-                pipes[iD].spacing = Math.floor(Math.random() * (pipes[3].maxSpacing - pipes[3].minSpacing)) + pipes[3].minSpacing;
+                pipes.at(iD).pipePos = whiteBoardX;
+                pipes.at(iD).holePos = Math.floor(Math.random() * (pipes.at(3).maxHolePos - pipes.at(3).minHolePos)) + pipes.at(3).minHolePos;
+                pipes.at(iD).pipeW = Math.floor(Math.random() * (pipes.at(3).maxWidth - pipes.at(3).minWidth)) + pipes.at(3).minWidth;
+                pipes.at(iD).spacing = Math.floor(Math.random() * (pipes.at(3).maxSpacing - pipes.at(3).minSpacing)) + pipes.at(3).minSpacing;
                 trailingPipe = iD;
             }
         }
         
         function pipePair(iD) {
-            let topPipeL = pipes[iD].holePos;
+            let topPipeL = pipes.at(iD).holePos;
             let bottomPipeL = c.height - topPipeL - level.holeSize;
             let bottomPipeY = topPipeL + level.holeSize;
             
             ctx.fillStyle = "black";
-            ctx.fillRect(pipes[iD].pipePos, 0, pipes[iD].pipeW, topPipeL);
-            ctx.fillRect(pipes[iD].pipePos, bottomPipeY, pipes[iD].pipeW, bottomPipeL);
+            ctx.fillRect(pipes.at(iD).pipePos, 0, pipes.at(iD).pipeW, topPipeL);
+            ctx.fillRect(pipes.at(iD).pipePos, bottomPipeY, pipes.at(iD).pipeW, bottomPipeL);
         }
         
         function detectCollision(iD) {
-            if (boxBirdX + 40 >= pipes[iD].pipePos && boxBirdX <= pipes[iD].pipePos + pipes[iD].pipeW && !pipes[iD].isCollision  && !gameStat[4].isGameOver) {
-                if (boxBirdY <= pipes[iD].holePos || boxBirdY +40 >= pipes[iD].holePos + level.holeSize) {
-                    pipes[iD].isCollision = true;
-                    gameStat[0].xBirds++;
+            if (boxBirdX + 40 >= pipes.at(iD).pipePos && boxBirdX <= pipes.at(iD).pipePos + pipes.at(iD).pipeW && !pipes.at(iD).isCollision  && gameStat.at(4).isRunning) {
+                if (boxBirdY <= pipes.at(iD).holePos || boxBirdY +40 >= pipes.at(iD).holePos + level.holeSize) {
+                    pipes.at(iD).isCollision = true;
+                    gameStat.at(0).xBirds++;
                 }
-            } else if (pipes[iD].pipePos < -pipes[iD].pipeW) {
-                pipes[iD].isCollision = false;
+            } else if (pipes.at(iD).pipePos < -pipes.at(iD).pipeW) {
+                pipes.at(iD).isCollision = false;
             }
-            if (gameStat[0].xBirds == gameStat[0].birds) {
-                gameStat[4].isGameOver = true;
+            if (gameStat.at(0).xBirds == level.birds) {
+                Object.assign(gameStat.at(4), {isGameOver:true, isRunning:false})
             }
         }
         
         function detectScore(iD) {
-            if (boxBirdX >= pipes[iD].pipePos + pipes[iD].pipeW && pipes[iD].pipePos > 0 && !pipes[iD].isCollision && !pipes[iD].isScore && !gameStat[4].isGameOver) {
-                pipes[iD].isScore = true;
-                gameStat[0].gameScore += 5;
-            } else if (pipes[iD].isScore && pipes[iD].pipePos <= -pipes[iD].pipeW) {
-                pipes[iD].isScore = false;
+            if (boxBirdX >= pipes.at(iD).pipePos + pipes.at(iD).pipeW && pipes.at(iD).pipePos > 0 && !pipes.at(iD).isCollision && !pipes.at(iD).isScore && gameStat.at(4).isRunning) {
+                pipes.at(iD).isScore = true;
+                gameStat.at(0).gameScore += 5;
+            } else if (pipes.at(iD).isScore && pipes.at(iD).pipePos <= -pipes.at(iD).pipeW) {
+                pipes.at(iD).isScore = false;
             }
         }
             
@@ -179,27 +197,50 @@
         }
             
         function drawBoxBirds() {
-            let i = gameStat[0].birds;
-            let n = gameStat[0].xBirds;
+            let i = level.birds;
+            let n = gameStat.at(0).xBirds;
+            let topSpacing = -45;
             let spacing = -45;
-            let xSpacing = -45;
             
             while (i > 0) {
-                boxBird(c.width + spacing, c.height -45, 30, 30);
-                i--;
-                spacing -= 45;
+                if (i >= 3) {
+                    boxBird(c.width + topSpacing, c.height -90, 30, 30, "black");
+                    if (n >= 3) {
+                        drawText(c.width + topSpacing, c.height -63, 40, "red", "X");
+                        n--;
+                    }
+                    topSpacing -= 45;
+                    i--;
+                } else {
+                    boxBird(c.width + spacing, c.height -45, 30, 30, "black");
+                    if (n > 0) {
+                        drawText(c.width + spacing, c.height -18, 40, "red", "X");
+                        n--;
+                    }
+                    spacing -= 45;
+                    i--;
+                }
             }
-            while (n > 0) {
-                drawText(c.width + xSpacing, c.height -18, 40, "red", "X");
-                n--;
-                xSpacing -= 45;
-            } 
         }
 
         function drawText(x, y, fontSize, color, text) {
             ctx.fillStyle = color;
             ctx.font = fontSize + "px Copperplate, Papyrus, Fantasy";
             ctx.fillText(text, x, y);
+        }
+
+        function startMenu() {
+            if (gameStat.at(4).isNewGame) {
+                ctx.fillStyle = "white";
+                ctx.fillRect(startMenuX, startMenuY, 400, 300);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(startMenuX,startMenuY,400,300);
+                drawText(startMenuX +45, startMenuY +50, 35, "black", "- Menu of challenge -");
+                drawText(startMenuX +140, startMenuY +120, 20, "black", "1: " + gameStat.at(1).level);
+                drawText(startMenuX +140, startMenuY +170, 20, "black", "2: " + gameStat.at(2).level);
+                drawText(startMenuX +140, startMenuY +220, 20, "black", "3: " + gameStat.at(3).level);
+            }
         }
         
         function whiteBoard() {
@@ -211,28 +252,27 @@
             drawText(whiteBoardX + 15, 50, 40, "black", "BoxBird v0.1");
             drawText(whiteBoardX + 15, 110, 20,"black", "Evade the haunting pillars...");
             drawText(whiteBoardX + 100, 135, 20, "black","- or loose it all.");
-            drawText(whiteBoardX + 15, c.height - 150, 13, "black","press <space> to flutter");
-            drawText(whiteBoardX + 15, c.height - 130, 13, "black","press <up/down> to move bird up/down");
-            drawText(whiteBoardX + 15, c.height - 110, 13, "black","press <p> to pause");
-            drawText(whiteBoardX + 15, c.height - 90, 13, "black","press <r> to reset");
-            drawText(whiteBoardX + 15, c.height - 20, 20, "black","Score:  " + gameStat[0].gameScore);
-            if (gameStat[4].isFirstGame) {
-                drawText(whiteBoardX -510, c.height -400, 50, "black", "Press <p> to start.");
+            drawText(whiteBoardX + 15, c.height - 140, 13, "black","press <space> to flutter");
+            drawText(whiteBoardX + 15, c.height - 120, 13, "black","press <p> to pause");
+            drawText(whiteBoardX + 15, c.height - 100, 13, "black","press <r> to restart");
+            drawText(whiteBoardX + 15, c.height - 10, 20, "black","score:  " + gameStat.at(0).gameScore);
+            if (gameStat.at(4).isRunning || gameStat.at(4).isReset || gameStat.at(4).isGameOver) {
+                drawText(whiteBoardX + 15, c.height - 40, 20, "black", "- " + level.level + " -");
             }
             if (seconds > 0) {
                 drawText(whiteBoardX + 100, 300, 150, "black", Math.floor(seconds)+1);
             }
-            if(gameStat[4].isGameOver) {
+            if(gameStat.at(4).isGameOver) {
                 drawText(whiteBoardX + 15, 300, 50, "black", "GameOver");
             }
-            if (gameStat[4].isPaused) {
+            if (gameStat.at(4).isPaused) {
                 drawText(whiteBoardX + 50, 300, 75, "black", "pause");
             }
             drawBoxBirds();
         }
 
         function update() {
-            if (gameStat[4].isRunning) {
+            if (!gameStat.at(4).isReset && !gameStat.at(4).isPaused) {
                 enableGravity();
                 pipeUpdater(0);
                 pipeUpdater(1);
@@ -252,7 +292,8 @@
             pipePair(1);
             pipePair(2);
             whiteBoard();
-            if (!gameStat[4].isFirstGame && !gameStat[4].isReset) {
+            startMenu();
+            if (!gameStat.at(4).isNewGame && !gameStat.at(4).isReset) {
                 boxBird(boxBirdX, boxBirdY, 40, 40, "black");
             }
         }
